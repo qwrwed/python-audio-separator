@@ -459,6 +459,13 @@ class CommonSeparator:
             output_subtype = 'PCM_16'
             self.logger.warning("No bit depth info available, defaulting to PCM_16")
 
+        # The output format may not support the input subtype (e.g. FLAC has no FLOAT or PCM_32)
+        output_format = os.path.splitext(stem_path)[1].lstrip(".").upper()
+        if not sf.check_format(output_format, output_subtype):
+            fallback_subtype = 'PCM_24' if sf.check_format(output_format, 'PCM_24') else None
+            self.logger.info(f"{output_format} does not support subtype {output_subtype}, using {fallback_subtype or 'the format default'}")
+            output_subtype = fallback_subtype
+
         # Correctly interleave stereo channels if needed
         if stem_source.ndim == 2 and stem_source.shape[1] == 2:
             # If the audio is already interleaved, ensure it's in the correct order
