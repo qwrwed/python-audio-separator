@@ -568,11 +568,15 @@ class Separator:
             total_size_in_bytes = int(response.headers.get("content-length", 0))
             progress_bar = tqdm(total=total_size_in_bytes, unit="iB", unit_scale=True)
 
-            with open(output_path, "wb") as f:
+            # Download to a temporary path and rename only once complete, so an
+            # interrupted download never passes the isfile() check above.
+            partial_path = f"{output_path}.part"
+            with open(partial_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     progress_bar.update(len(chunk))
                     f.write(chunk)
             progress_bar.close()
+            os.replace(partial_path, output_path)
         else:
             raise RuntimeError(f"Failed to download file from {url}, response code: {response.status_code}")
 
