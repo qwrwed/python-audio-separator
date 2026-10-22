@@ -89,7 +89,7 @@ Two tiers (added 2026-07 for RoFormer/DirectML support, issue #292):
    (no silent legacy fallback). The image uses the NVIDIA **GRID** driver
    (WDDM mode) — the datacenter driver puts the T4 in TCC mode, which has no
    DirectX support and breaks DirectML. torch-directml is layered via pip in
-   the job (poetry's lock resolves the `dml` extra to an unusable
+   the job (the uv lock resolves the `dml` extra to an unusable
    torch-1.13-era torch-directml because modern releases pin torch==2.4.1).
 
 ## Required GitHub branch protection checks

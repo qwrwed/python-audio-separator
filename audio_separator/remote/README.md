@@ -46,8 +46,8 @@ To use the remote API functionality, you'll need to deploy the Audio Separator A
 2. **Install the Modal CLI** and authenticate:
    (Note, modal will need access to the installed project dependencies in whatever virtual environment you're using for audio-separator)
    ```bash
-   poetry install --extras cpu # need either cpu or gpu to ensure onnxruntime is installed
-   pip install modal
+   uv sync --extra cpu # need either cpu or gpu to ensure onnxruntime is installed
+   uv pip install modal
    modal setup
    ```
 3. **Deploy the Audio Separator API**:

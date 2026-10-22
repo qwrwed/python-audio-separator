@@ -18,7 +18,7 @@ jobs:
               - 'audio_separator/**'
               - 'tests/**'
               - 'pyproject.toml'
-              - 'poetry.lock'
+              - 'uv.lock'
               - '.github/workflows/run-integration-tests.yaml'
 
   # ── Integration test jobs (parallel across 3 GPU runners) ──────────
@@ -40,24 +40,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify GPU availability
         run: nvidia-smi --query-gpu=driver_version,name,memory.total --format=csv,noheader
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: '3.13'
-      - name: Install pipx and poetry
-        run: |
-          python -m pip install --user pipx && python -m pipx ensurepath
-          python -m pipx install poetry
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          enable-cache: true
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libsamplerate0 libsamplerate-dev
-      - name: Set up Python with cache
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: poetry
-      - name: Install Poetry dependencies (GPU)
-        run: poetry install -E gpu
+      - name: Install uv dependencies (GPU)
+        run: uv sync --locked --extra gpu
       - name: Verify pre-cached models
         run: |
           MODEL_COUNT=$(ls -1 $AUDIO_SEPARATOR_MODEL_DIR | wc -l)
@@ -66,7 +57,7 @@ jobs:
             echo "::warning::Expected at least 10 pre-cached model files, found $MODEL_COUNT"
           fi
       - name: "Run: ensemble preset tests (~8 min)"
-        run: poetry run pytest -sv tests/integration/test_ensemble_integration.py
+        run: uv run pytest -sv tests/integration/test_ensemble_integration.py
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -85,27 +76,18 @@ jobs:
       AUDIO_SEPARATOR_MODEL_DIR: /opt/audio-separator-models
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: '3.13'
-      - name: Install pipx and poetry
-        run: |
-          python -m pip install --user pipx && python -m pipx ensurepath
-          python -m pipx install poetry
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          enable-cache: true
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libsamplerate0 libsamplerate-dev
-      - name: Set up Python with cache
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: poetry
-      - name: Install Poetry dependencies (GPU)
-        run: poetry install -E gpu
+      - name: Install uv dependencies (GPU)
+        run: uv sync --locked --extra gpu
       - name: "Run: 24-bit, CLI, output, roformer and timing tests (~8 min)"
         run: |
-          poetry run pytest -sv \
+          uv run pytest -sv \
             tests/integration/test_24bit_preservation.py \
             tests/integration/test_cli_integration.py \
             tests/integration/test_separator_output_integration.py \
@@ -135,27 +117,18 @@ jobs:
       AUDIO_SEPARATOR_MODEL_DIR: /opt/audio-separator-models
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: '3.13'
-      - name: Install pipx and poetry
-        run: |
-          python -m pip install --user pipx && python -m pipx ensurepath
-          python -m pipx install poetry
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          enable-cache: true
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libsamplerate0 libsamplerate-dev
-      - name: Set up Python with cache
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: poetry
-      - name: Install Poetry dependencies (GPU)
-        run: poetry install -E gpu
+      - name: Install uv dependencies (GPU)
+        run: uv sync --locked --extra gpu
       - name: "Run: ensemble quality, multi-stem, and remote API tests (~6 min)"
         run: |
-          poetry run pytest -sv \
+          uv run pytest -sv \
             tests/integration/test_ensemble_meaningful.py \
             tests/integration/test_multi_stem_verification.py \
             tests/integration/test_remote_api_integration.py
@@ -188,17 +161,15 @@ jobs:
       AUDIO_SEPARATOR_MODEL_DIR: C:\audio-separator-models
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python with cache
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: '3.12'
-          cache: poetry
+          enable-cache: true
       - name: Install ffmpeg
         run: choco install ffmpeg -y --no-progress
-      - name: Install Poetry dependencies (CPU)
-        run: poetry install -E cpu
+      - name: Install uv dependencies (CPU)
+        run: uv sync --locked --extra cpu
       - name: Cache separation models
         uses: actions/cache@v4
         with:
@@ -209,7 +180,7 @@ jobs:
         # doesn't exist (it never creates it); a cache miss leaves it absent.
         run: New-Item -ItemType Directory -Force -Path C:\audio-separator-models | Out-Null
       - name: "Run: one model per DML-relevant architecture (RoFormer, MDX, VR)"
-        run: poetry run pytest -sv tests/integration/test_cli_integration.py -k "mel_band_roformer_karaoke or Inst_HQ_4 or 2_HP-UVR"
+        run: uv run pytest -sv tests/integration/test_cli_integration.py -k "mel_band_roformer_karaoke or Inst_HQ_4 or 2_HP-UVR"
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -225,8 +196,8 @@ jobs:
   # see docs/CI-GPU-RUNNERS.md). Experimental: continue-on-error until
   # promoted to a required check.
   #
-  # torch-directml is layered via pip, NOT the poetry `dml` extra: current
-  # torch-directml releases pin torch==2.4.1, so poetry's lock resolved the
+  # torch-directml is layered via pip, NOT the uv `dml` extra: current
+  # torch-directml releases pin torch==2.4.1, so the lock resolves the
   # extra to torch-directml 0.1.13 (a torch-1.13-era relic that must not be
   # used). pip resolves the modern 0.2.5.dev wheel + a compatible torch in
   # this job's venv only, leaving every other platform's torch untouched.
@@ -244,12 +215,16 @@ jobs:
         shell: powershell
     env:
       AUDIO_SEPARATOR_MODEL_DIR: C:\audio-separator-models
-      # Short venv base path: the default SYSTEM-profile pypoetry cache dir
-      # plus onnx's very long test-data paths exceeds Windows' 260-char
-      # MAX_PATH and breaks pip ([WinError 206]).
-      POETRY_VIRTUALENVS_PATH: C:\venvs
+      # Short venv path: a venv under the checkout dir plus onnx's very long
+      # test-data paths exceeds Windows' 260-char MAX_PATH and breaks pip
+      # ([WinError 206]).
+      UV_PROJECT_ENVIRONMENT: C:\venvs\audio-separator
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
+        with:
+          python-version: '3.12'
       - name: Enable Windows long paths
         run: Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -Value 1 -Type DWord
       - name: Verify GPU is in WDDM mode (DirectML requirement)
@@ -257,20 +232,22 @@ jobs:
           nvidia-smi --query-gpu=driver_version,name,driver_model.current --format=csv,noheader
           $model = nvidia-smi --query-gpu=driver_model.current --format=csv,noheader
           if ($model -notmatch "WDDM") { throw "GPU not in WDDM mode: $model" }
-      - name: Install Poetry dependencies (base)
-        run: poetry install
+      - name: Install uv dependencies (base)
+        run: uv sync --locked
+      # Later steps use `uv run --no-sync` so uv doesn't revert the torch
+      # version that torch-directml pulls in back to the locked one.
       - name: Layer DirectML packages via pip
-        run: poetry run pip install onnxruntime-directml torch-directml
+        run: uv pip install --python $env:UV_PROJECT_ENVIRONMENT onnxruntime-directml torch-directml
       - name: Install VC++ runtime (torch/onnxruntime native DLLs need it)
         run: |
           curl.exe -fsSL -o "$env:TEMP\vc_redist.x64.exe" https://aka.ms/vs/17/release/vc_redist.x64.exe
           Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/install", "/quiet", "/norestart" -Wait
       - name: Verify DirectML availability
         run: |
-          poetry run python -c "import torch_directml; assert torch_directml.is_available(); print('torch_directml OK:', torch_directml.device_name(0))"
-          poetry run python -c "import onnxruntime as ort; ps = ort.get_available_providers(); print(ps); assert 'DmlExecutionProvider' in ps"
+          uv run --no-sync python -c "import torch_directml; assert torch_directml.is_available(); print('torch_directml OK:', torch_directml.device_name(0))"
+          uv run --no-sync python -c "import onnxruntime as ort; ps = ort.get_available_providers(); print(ps); assert 'DmlExecutionProvider' in ps"
       - name: "Run: DirectML separations (RoFormer, MDX, VR)"
-        run: poetry run pytest -sv tests/integration/test_windows_directml.py
+        run: uv run --no-sync pytest -sv tests/integration/test_windows_directml.py
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4

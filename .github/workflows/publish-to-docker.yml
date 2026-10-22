@@ -31,7 +31,7 @@ jobs:
 
       - name: Get version from pyproject.toml
         run: |
-          VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['tool']['poetry']['version'])")
+          VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Set up QEMU

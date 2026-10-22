@@ -18,7 +18,7 @@ jobs:
               - 'audio_separator/**'
               - 'tests/**'
               - 'pyproject.toml'
-              - 'poetry.lock'
+              - 'uv.lock'
 
   test-ubuntu:
     needs: changes
@@ -44,20 +44,17 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry # caching dependencies from poetry.lock
+          enable-cache: true # caching dependencies from uv.lock
 
-      - name: Install Poetry dependencies (CPU)
-        run: poetry install -E cpu
+      - name: Install uv dependencies (CPU)
+        run: uv sync --locked --extra cpu
 
       - name: Run unit tests with coverage
-        run: poetry run pytest tests/unit
+        run: uv run pytest tests/unit
 
   test-macos:
     needs: changes
@@ -72,30 +69,27 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry # caching dependencies from poetry.lock
+          enable-cache: true # caching dependencies from uv.lock
 
-      - name: Install Poetry dependencies (CPU)
+      - name: Install uv dependencies (CPU)
         # Large wheels intermittently fail mid-download on hosted macOS runners,
         # so retry the install; completed downloads are reused from the cache.
         run: |
           n=0
-          until poetry install -E cpu; do
+          until uv sync --locked --extra cpu; do
             n=$((n+1))
             if [ "$n" -ge 3 ]; then exit 1; fi
-            echo "poetry install failed; retry $n/2 in 15s"
+            echo "uv sync failed; retry $n/2 in 15s"
             sleep 15
           done
 
       - name: Run unit tests with coverage
         run: |
-          poetry run pytest tests/unit
+          uv run pytest tests/unit
 
   test-windows:
     needs: changes
@@ -110,20 +104,17 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry # caching dependencies from poetry.lock
+          enable-cache: true # caching dependencies from uv.lock
 
-      - name: Install Poetry dependencies (CPU)
-        run: poetry install -E cpu
+      - name: Install uv dependencies (CPU)
+        run: uv sync --locked --extra cpu
 
       - name: Run unit tests with coverage
-        run: poetry run pytest tests/unit
+        run: uv run pytest tests/unit
 
   # Gate job for branch protection - always reports a status
   unit-tests:

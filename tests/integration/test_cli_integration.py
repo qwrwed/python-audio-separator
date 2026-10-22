@@ -12,8 +12,8 @@ from utils import generate_reference_images, compare_images
 def resolve_cli_executable():
     """Locate the audio-separator console script.
 
-    On Windows CI, `poetry run pytest` does not reliably put the venv Scripts
-    directory on the subprocess search PATH, so a bare "audio-separator"
+    On Windows CI, the venv Scripts directory is not reliably on the
+    subprocess search PATH, so a bare "audio-separator"
     fails with WinError 2. Console scripts always live in the same directory
     as the interpreter in a venv (Scripts\\ on Windows, bin/ on POSIX), so
     fall back to resolving next to sys.executable.

@@ -49,10 +49,9 @@ The simplest (and probably most used) use case for this package is to separate a
   - [Developing Locally](#developing-locally)
     - [Prerequisites](#prerequisites)
     - [Clone the Repository](#clone-the-repository)
-    - [Create and activate the Conda Environment](#create-and-activate-the-conda-environment)
     - [Install Dependencies](#install-dependencies)
     - [Running the Command-Line Interface Locally](#running-the-command-line-interface-locally)
-    - [Deactivate the Virtual Environment](#deactivate-the-virtual-environment)
+    - [Running the Tests](#running-the-tests)
     - [Building the Package](#building-the-package)
   - [Contributing 🤝](#contributing-)
   - [License 📄](#license-)
@@ -773,13 +772,11 @@ Libraries: torch, onnx, onnxruntime, numpy, librosa, requests, six, tqdm, pydub
 
 ## Developing Locally
 
-This project uses Poetry for dependency management and packaging. Follow these steps to setup a local development environment:
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and packaging. Follow these steps to setup a local development environment:
 
 ### Prerequisites
 
-- Make sure you have Python 3.10 or newer installed on your machine, excluding Python 3.14.1.
-- Install Poetry 2.0.0 or newer. Poetry 2 is required for dependency resolution, installation, and builds.
-- Install Conda (I recommend Miniforge: [Miniforge GitHub](https://github.com/conda-forge/miniforge)) to manage your Python virtual environments
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/). uv downloads a suitable Python (3.10 or newer, excluding 3.14.1) if you don't have one.
 
 The contributor lock currently resolves PyTorch 2.13 with the CUDA 13.0 stack on Linux. [CUDA 13 requires an R580-or-newer NVIDIA driver](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html), so check `nvidia-smi` before using a self-hosted GPU runner. This applies to the contributor lock only, not to pip installations.
 
@@ -794,50 +791,39 @@ cd audio-separator
 
 Replace `YOUR_USERNAME` with your GitHub username if you've forked the repository, or use the main repository URL if you have the permissions.
 
-### Create and activate the Conda Environment
-
-To create and activate the conda environment, use the following commands:
-
-```sh
-conda env create
-conda activate audio-separator-dev
-```
-
 ### Install Dependencies
 
-Once you're inside the conda env, run the following command to install the project dependencies:
+Run the following command to create a `.venv` virtual environment and install the project and dev dependencies into it:
 
 ```sh
-poetry install
+uv sync
 ```
 
 Install extra dependencies depending if you're running with GPU or CPU.
 ```sh
-poetry install --extras "cpu"
+uv sync --extra cpu
 ```
 or
 ```sh
-poetry install --extras "gpu"
+uv sync --extra gpu
 ```
 or
 ```sh
-poetry install --extras "dml"
+uv sync --extra dml
 ```
 
 ### Running the Command-Line Interface Locally
 
-You can run the CLI command directly within the virtual environment. For example:
+You can run the CLI command through uv, which uses the project's virtual environment. For example:
 
 ```sh
-audio-separator path/to/your/audio-file.wav
+uv run audio-separator path/to/your/audio-file.wav
 ```
 
-### Deactivate the Virtual Environment
-
-Once you are done with your development work, you can exit the virtual environment by simply typing:
+### Running the Tests
 
 ```sh
-conda deactivate
+uv run pytest tests/unit
 ```
 
 ### Building the Package
@@ -845,7 +831,7 @@ conda deactivate
 To build the package for distribution, use the following command:
 
 ```sh
-poetry build
+uv build
 ```
 
 This will generate the distribution packages in the dist directory - but for now only @beveradb will be able to publish to PyPI.
